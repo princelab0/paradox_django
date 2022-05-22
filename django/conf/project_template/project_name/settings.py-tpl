@@ -121,3 +121,36 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/{{ docs_version }}/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+from collections import OrderedDict
+from django.apps import apps
+from django.conf import settings
+from django.core import management
+
+import glob
+import os
+
+a = glob.glob('**/apps.py', recursive=True)
+print(a)
+for ap in a:
+    try:
+        b = os.path.dirname(ap)
+        for subDir in os.walk(b):
+            if len(subDir[1]) == 0:
+                # print("sub dir name:" + subDir[0])
+                # print("files in subdir:" + str(subDir[2]))
+                print("just name of each in subdir:{}".format(subDir[0].split('\\')[-1]))
+                new_app_name = "{}".format(subDir[0].split('\\')[-1])
+                print("new app name:" + new_app_name)
+                settings.INSTALLED_APPS += (new_app_name,)
+                apps.app_configs = OrderedDict()
+                apps.apps_ready = apps.models_ready = apps.loading = apps.ready = False
+                apps.clear_cache()
+                apps.clear_cache()
+                apps.populate(settings.INSTALLED_APPS)
+                management.call_command('makemigrations', new_app_name, interactive=False)
+                management.call_command('migrate', new_app_name, interactive=False)
+    except :
+        pass
+
